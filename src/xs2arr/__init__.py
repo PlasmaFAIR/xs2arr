@@ -1,4 +1,5 @@
-from xs2arr.main import main
+from xs2arr.main import run
+from xs2arr.model import Model
 
 from importlib.metadata import version, PackageNotFoundError
 

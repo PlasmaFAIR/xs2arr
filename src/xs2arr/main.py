@@ -1,25 +1,16 @@
-from argparse import ArgumentParser
 from sys import exit
 
+from xs2arr.model import Model
+from xs2arr.io import get_args
 
-def main() -> int:
-    parser = ArgumentParser(
-        prog="Cross section to Arrhenius",
-        description="Calculates Arrhenius coefficients from a provided cross section",
-    )
 
-    parser.add_argument(
-        "input_file", type=str, default="input.txt", nargs="?", help="Input LXCat file"
-    )
-    parser.add_argument(
-        "output_file", type=str, default="output.txt", nargs="?", help="Output file"
-    )
-    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+def run() -> int:
+    args = get_args()
 
-    args = parser.parse_args()
+    model = Model(args.input_file)
 
     return 0
 
 
 if __name__ == "__main__":
-    exit(main())
+    exit(run())

@@ -21,7 +21,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.scripts]
-xs2arr = "xs2arr:main"
+xs2arr = "xs2arr:run"
 
 [project.optional-dependencies]
 tests = []
