@@ -1,4 +1,4 @@
-from xs2arr.cross_section import read_cross_sections_from_file
+from xs2arr.io import parse_lxcat_data
 
 
 class Model:
@@ -6,4 +6,4 @@ class Model:
         if input_file is None:
             raise ValueError('No input file provided')
 
-        self.cross_sections = read_cross_sections_from_file(input_file)
+        self.data = parse_lxcat_data(input_file)
