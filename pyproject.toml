@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools >= 42.0",
+    "setuptools_scm[toml] >= 6.2",
+    "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xs2arr"
+authors = [
+    {name = "Andrew Gibson"}
+]
+description = "Calculates Arrhenius coefficients from a provided cross section"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+dynamic = ["version"]
+
+[project.optional-dependencies]
+tests = []
+
+[tool.setuptools_scm]
