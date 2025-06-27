@@ -1,5 +1,6 @@
 from xs2arr.main import run
 from xs2arr.model import Model
+from xs2arr.constants import EXAMPLE_LXCAT_FILE
 
 from importlib.metadata import version, PackageNotFoundError
 
