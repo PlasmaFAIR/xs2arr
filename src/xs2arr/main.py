@@ -20,7 +20,7 @@ def run() -> int:
 
     args = parser.parse_args()
 
-    model = Model(args.input_file)
+    model = Model(args.input_file)  # noqa: F841
 
     return 0
 
