@@ -14,9 +14,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "lmfit>=1.3.3",
-    "lxcat-data-parser>=0.1.1",
-    "numpy<2",
-    "pandas<1.5",
+    "lxcat-data-parser@git+https://github.com/avadean/lxcat_data_parser",
+    "numpy>=1.26.4",
+    "pandas>=2.3.0",
 ]
 dynamic = ["version"]
 
