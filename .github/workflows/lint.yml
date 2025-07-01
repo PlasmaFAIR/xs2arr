@@ -33,3 +33,7 @@ jobs:
     - name: Run linter check
       run: |
         ruff check --output-format=github src/ tests/
+
+    - name: Run linter format
+      run: |
+        ruff format --check src/ tests/
