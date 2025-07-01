@@ -12,6 +12,10 @@ jobs:
   check-lock:
     name: Check uv.lock consistency
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
     steps:
       - uses: actions/checkout@v4
 
