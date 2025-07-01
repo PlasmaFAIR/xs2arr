@@ -1,1 +1,0 @@
-EXAMPLE_LXCAT_FILE = "tests/example_lxcat.txt"
