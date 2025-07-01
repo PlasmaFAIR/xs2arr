@@ -1,4 +1,7 @@
-from xs2arr import Model, EXAMPLE_LXCAT_FILE
+from xs2arr import Model
+
+
+EXAMPLE_LXCAT_FILE = "tests/example_lxcat.txt"
 
 
 def test_model():
