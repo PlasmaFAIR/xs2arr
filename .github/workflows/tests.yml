@@ -5,9 +5,9 @@ name: Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, new-workflows ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, new-workflows ]
 
 jobs:
   build-and-test:
@@ -31,4 +31,5 @@ jobs:
         pip install -e .[tests]
 
     - name: Test with pytest
-      run: pytest -v
+      run: |
+        pytest -v
