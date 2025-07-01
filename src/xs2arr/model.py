@@ -2,7 +2,7 @@ from xs2arr.io import parse_lxcat_data
 
 
 class Model:
-    def __init__(self, input_file: str = None):
+    def __init__(self, input_file: str | None = None):
         if input_file is None:
             raise ValueError("No input file provided")
 

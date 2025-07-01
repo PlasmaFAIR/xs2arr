@@ -1,15 +1,15 @@
-from xs2arr.model import Model
-
+from contextlib import suppress
 from importlib.metadata import (
-    version as _version,
     PackageNotFoundError as _PackageNotFoundError,
 )
+from importlib.metadata import (
+    version as _version,
+)
+
+from xs2arr.model import Model
 
 __all__ = ["Model"]
 
 
-try:
+with suppress(_PackageNotFoundError):
     __version__ = _version(__name__)
-except _PackageNotFoundError:
-    # Package hasn't been installed
-    pass
