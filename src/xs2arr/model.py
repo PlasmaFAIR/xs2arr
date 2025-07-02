@@ -2,8 +2,8 @@ from xs2arr.io import parse_lxcat_data
 
 
 class Model:
-    def __init__(self, input_file: str | None = None):
-        if input_file is None:
-            raise ValueError("No input file provided")
+    def __init__(self, lxcat_file: str | None = None):
+        if lxcat_file is None:
+            raise ValueError("No lxcat file provided")
 
-        self.data = parse_lxcat_data(input_file)
+        self.cross_section_set = parse_lxcat_data(lxcat_file)
