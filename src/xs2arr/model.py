@@ -1,9 +1,6 @@
-from xs2arr.constants import (
-    druyvesteyn_beta1,
-    druyvesteyn_beta2,
-    maxwellian_beta1,
-    maxwellian_beta2,
-)
+from numpy import arange, array, ndarray
+
+from xs2arr.eedf import Druyvesteyn, Maxwellian
 from xs2arr.io import parse_lxcat_data
 
 
@@ -12,6 +9,7 @@ class Model:
         self,
         lxcat_file: str | None = None,
         eedf_type: str = "maxwellian",
+        eedf_grid: ndarray | None = None,
     ):
         if lxcat_file is None:
             raise ValueError("No lxcat file provided")
@@ -20,36 +18,24 @@ class Model:
         if not lxcat_file:
             raise ValueError("lxcat_file cannot be an empty string")
 
-        self.cross_section_set = parse_lxcat_data(lxcat_file)
-
-        self._eedf_beta1 = 0.0
-        self._eedf_beta2 = 0.0
-        self._eedf_type = None
-        self.eedf_type = eedf_type
-
-    @property
-    def eedf_type(self) -> str:
-        """Which EEDF to use: 'maxwellian' or 'druyvesteyn'."""
-        return self._eedf_type
-
-    @eedf_type.setter
-    def eedf_type(self, value: str) -> None:
-        if not isinstance(value, str):
+        if not isinstance(eedf_type, str):
             raise TypeError("eedf_type must be of type str")
-        if value not in ("maxwellian", "druyvesteyn"):
+        if eedf_type not in ("maxwellian", "druyvesteyn"):
             raise ValueError("eedf_type must be 'maxwellian' or 'druyvesteyn'")
 
-        self._eedf_type = value
+        if eedf_grid is None:
+            eedf_grid = arange(start=0.0, stop=100.0, step=0.01, dtype=float)
+        if isinstance(eedf_grid, list | tuple):
+            eedf_grid = array(eedf_grid, dtype=float)
+        if not isinstance(eedf_grid, ndarray):
+            raise TypeError("eedf_grid must be of type ndarray")
+        if eedf_grid.ndim != 1:
+            raise ValueError("eedf_grid must be 1-dimensional")
+        if len(eedf_grid) < 2:
+            raise ValueError("len(eedf_grid) must be >= 2")
+        if any(eedf_grid < 0.0):
+            raise ValueError("All values in eedf_grid must be >= 0.0")
 
-        self._set_eedf_constants()
-
-    def _set_eedf_constants(self):
-        """Sets the constants beta1 and beta2 for the EEDF based on its type."""
-        if self._eedf_type == "maxwellian":
-            self._eedf_beta1 = maxwellian_beta1
-            self._eedf_beta2 = maxwellian_beta2
-        elif self._eedf_type == "druyvesteyn":
-            self._eedf_beta1 = druyvesteyn_beta1
-            self._eedf_beta2 = druyvesteyn_beta2
-        else:
-            raise ValueError("self._eedf_type is set incorrectly")
+        self.cross_section_set = parse_lxcat_data(lxcat_file)
+        self.eedf_cls = Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
+        self.eedf_grid = eedf_grid

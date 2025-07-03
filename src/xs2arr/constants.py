@@ -5,13 +5,13 @@ q = 1.602176634e-19  # Elementary charge
 m_e = 9.1093837139e-31  # Electron mass
 
 
-# EEDF constants.
+# EEDF constants - Plasma Sources Sci. Technol. 27 095008 2018 equations 4 and 5 (except mean energy terms).
 def _beta1(x: float):
-    return gamma(2.5 / x) ** 1.5 * gamma(1.5 / x) ** -2.5
+    return x * ((gamma(2.5 / x)) ** 1.5) / ((gamma(1.5 / x)) ** 2.5)
 
 
 def _beta2(x: float):
-    return gamma(2.5 / x) / gamma(1.5 / x)
+    return (gamma(2.5 / x) / gamma(1.5 / x)) ** x
 
 
 maxwellian_beta1 = _beta1(x=1.0)
