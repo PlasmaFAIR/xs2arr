@@ -20,7 +20,9 @@ def run() -> int:
 
     args = parser.parse_args()
 
-    model = Model(args.input_file)  # noqa: F841
+    model = Model(args.input_file)
+
+    results = model.arrhenius()  # noqa: F841
 
     return 0
 

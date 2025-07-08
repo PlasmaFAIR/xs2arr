@@ -3,7 +3,10 @@ from xs2arr import Model
 EXAMPLE_LXCAT_FILE = "tests/example_lxcat.txt"
 
 
-def test_model():
-    """Test the robustness of creating the model class from example LXCat data."""
+def test_model(snapshot):
+    """Test the robustness of the model class from an example LXCat data."""
 
-    Model(EXAMPLE_LXCAT_FILE)
+    model = Model(EXAMPLE_LXCAT_FILE)
+    results = model.arrhenius()
+
+    assert results == snapshot
