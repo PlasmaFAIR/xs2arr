@@ -1,12 +1,12 @@
 from lmfit import Model as FittingModel
 from lmfit import Parameters
-from numpy import array, asarray, linspace, ndarray
+from numpy import array, asarray, linspace, ndarray, sqrt
 
 from xs2arr.cross_section import interpolate_xs
 from xs2arr.eedf import Druyvesteyn, Maxwellian
 from xs2arr.io import parse_lxcat_data
 from xs2arr.rate import compute_rate
-from xs2arr.utils import arrhenius
+from xs2arr.utils import arrhenius, m_e, q
 
 
 class Model:
@@ -95,6 +95,9 @@ class Model:
             ]
 
             rates = asarray(rates, dtype=float)
+
+            # Convert rates to appropriate units.
+            rates *= sqrt(2.0 * q / m_e)
 
             # And compute the a, b and c Arrhenius coefficients.
             regressor = FittingModel(arrhenius, independent_vars=["T"])
