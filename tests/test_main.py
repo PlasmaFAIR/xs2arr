@@ -18,7 +18,7 @@ def test_model():
 
 @pytest.mark.parametrize("T", [1.0, 2.0, 3.0, 4.0, 5.0])
 def test_rate_integral(T: float):
-    """Test the rate integral calculation for an analytic example."""
+    """Test the rate integral calculation for the analytic example of xs=1/sqrt(energy)."""
 
     energies = linspace(start=0.1, stop=100.0, num=1000, dtype=float)
 
@@ -30,4 +30,4 @@ def test_rate_integral(T: float):
     rate = compute_rate(energies, xs, EEDF(T).pdf(energies))
 
     # EEDF is normalised, therefore rate should be close to 1.
-    assert isclose(rate, 1.0, atol=1e-1)
+    assert isclose(rate, 1.0, atol=5e-2)
