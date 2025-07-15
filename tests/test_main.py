@@ -16,11 +16,11 @@ def test_model():
     results = model.arrhenius()  # noqa: F841
 
 
-@pytest.mark.parametrize("T", [1.0, 2.0, 3.0, 4.0, 5.0])
+@pytest.mark.parametrize("T", [0.5, 1.0, 3.0, 5.0, 10.0])
 def test_rate_integral(T: float):
     """Test the rate integral calculation for the analytic example of xs=1/sqrt(energy)."""
 
-    energies = linspace(start=0.1, stop=100.0, num=1000, dtype=float)
+    energies = linspace(start=1e-6, stop=100.0, num=10000, dtype=float)
 
     # This gives rate integral as purely integral of the EEDF.
     xs = 1.0 / sqrt(energies)
@@ -29,5 +29,5 @@ def test_rate_integral(T: float):
 
     rate = compute_rate(energies, xs, EEDF(T).pdf(energies))
 
-    # EEDF is normalised, therefore rate should be close to 1.
-    assert isclose(rate, 1.0, atol=5e-2)
+    # EEDF is normalised, therefore result should be close to 1.
+    assert isclose(rate, 1.0, atol=1e-3)
