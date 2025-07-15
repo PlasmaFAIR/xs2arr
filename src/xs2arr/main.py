@@ -22,7 +22,7 @@ def run() -> int:
 
     model = Model(args.input_file)
 
-    results = model.arrhenius()  # noqa: F841
+    results = model.fit()  # noqa: F841
 
     return 0
 

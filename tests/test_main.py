@@ -13,7 +13,7 @@ def test_model():
 
     model = Model(EXAMPLE_LXCAT_FILE)
 
-    results = model.arrhenius()  # noqa: F841
+    results = model.fit()  # noqa: F841
 
 
 @pytest.mark.parametrize("T", [0.5, 1.0, 3.0, 5.0, 10.0])

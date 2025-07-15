@@ -1,12 +1,12 @@
 import numpy as np
 from lmfit import Model as FittingModel
-from lmfit import Parameters
+from lmfit import Parameters, create_params
 
 from xs2arr.cross_section import interpolate_xs
 from xs2arr.eedf import Druyvesteyn, Maxwellian
 from xs2arr.io import parse_lxcat_data
 from xs2arr.rate import compute_rate
-from xs2arr.utils import arrhenius, m_e, q
+from xs2arr.utils import arrhenius, arrhenius_log, m_e, q
 
 
 class Model:
@@ -45,9 +45,12 @@ class Model:
         self.eedf_cls = Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
         self.eedf_grid = eedf_grid
 
-    def arrhenius(
-        self, T_grid: np.ndarray | None = None, mean_E_grid: np.ndarray | None = None
-    ):
+    def fit(
+        self,
+        T_grid: np.ndarray | None = None,
+        mean_E_grid: np.ndarray | None = None,
+        logarithmic: bool = True,
+    ) -> list[tuple[FittingModel, float, float, float]]:
         # Only allow a user to call arrhenius from an instantiated object of the class.
         if isinstance(self, type):
             raise TypeError(
@@ -71,11 +74,10 @@ class Model:
         if np.any(T_grid < 0.0):
             raise ValueError("All values in T_grid must be >= 0.0")
 
-        # For the Arrhenius equation fittings.
-        params = Parameters()
-        params.add("a", value=1e-14)
-        params.add("b", value=0.1)
-        params.add("c", value=-10.0, max=0.0)
+        if not isinstance(logarithmic, bool):
+            raise TypeError("logarithmic must be of type bool")
+
+        regressor, params = _create_fitting_model(logarithmic)
 
         results = []
 
@@ -99,9 +101,57 @@ class Model:
             # Convert rates to appropriate units.
             rates *= np.sqrt(2.0 * q / m_e)
 
-            # And compute the a, b and c Arrhenius coefficients.
-            regressor = FittingModel(arrhenius, independent_vars=["T"])
+            T_grid, rates = _remove_bad_data(T_grid, rates, logarithmic)
 
-            results.append(regressor.fit(rates, params, T=T_grid))
+            rates = np.log10(rates) if logarithmic else rates
+
+            fitting = regressor.fit(rates, params, T=T_grid)
+
+            a_true, b_true, c_true = _get_true_abc(fitting, logarithmic)
+
+            results.append((fitting, a_true, b_true, c_true))
 
         return results
+
+
+def _create_fitting_model(logarithmic: bool) -> tuple[FittingModel, Parameters]:
+    if logarithmic:
+        params = create_params(
+            log10_a={"value": -14.0}, b=0.1, c={"value": -10.0, "max": 0.0}
+        )
+    else:
+        params = create_params(
+            a={"value": 1e-14}, b=0.1, c={"value": -10.0, "max": 0.0}
+        )
+
+    regressor = FittingModel(
+        arrhenius_log if logarithmic else arrhenius, independent_vars=["T"]
+    )
+
+    return regressor, params
+
+
+def _remove_bad_data(
+    T_grid: np.ndarray, rates: np.ndarray, logarithmic: bool = True
+) -> tuple[np.ndarray, np.ndarray]:
+    if not logarithmic:
+        return T_grid, rates
+
+    # Remove entries that have rate exactly as 0 if doing logarithmic fitting.
+    mask = rates > 0.0
+
+    return T_grid[mask], rates[mask]
+
+
+def _get_true_abc(
+    fitting: FittingModel, logarithmic: bool = True
+) -> tuple[float, float, float]:
+    a = (
+        (10.0 ** fitting.params["log10_a"].value)
+        if logarithmic
+        else fitting.params["a"].value
+    )
+    b = fitting.params["b"].value
+    c = fitting.params["c"].value
+
+    return a, b, c
