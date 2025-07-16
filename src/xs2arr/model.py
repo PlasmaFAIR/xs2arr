@@ -5,7 +5,7 @@ from lmfit import Parameters, create_params
 from xs2arr.cross_section import interpolate_xs
 from xs2arr.eedf import Druyvesteyn, Maxwellian
 from xs2arr.io import parse_lxcat_data
-from xs2arr.rate import compute_rate
+from xs2arr.rate import compute_rate_simpson, compute_rate_trapezoid
 from xs2arr.utils import arrhenius, arrhenius_log, m_e, q
 
 
@@ -15,7 +15,15 @@ class Model:
         lxcat_file: str | None = None,
         eedf_type: str = "maxwellian",
         eedf_grid: np.ndarray | None = None,
+        integrator: str = "simpson",
     ):
+        self.cross_section_set = self._validate_and_prepare_lxcat_file(lxcat_file)
+        self.eedf_cls = self._validate_and_prepare_eedf(eedf_type)
+        self.eedf_grid = self._validate_and_prepare_eedf_grid(eedf_grid)
+        self.rate_computer = self._validate_and_prepare_integrator(integrator)
+
+    @staticmethod
+    def _validate_and_prepare_lxcat_file(lxcat_file: str | None):
         if lxcat_file is None:
             raise ValueError("No lxcat file provided")
         if not isinstance(lxcat_file, str):
@@ -23,11 +31,19 @@ class Model:
         if not lxcat_file:
             raise ValueError("lxcat_file cannot be an empty string")
 
+        return parse_lxcat_data(lxcat_file)
+
+    @staticmethod
+    def _validate_and_prepare_eedf(eedf_type: str):
         if not isinstance(eedf_type, str):
             raise TypeError("eedf_type must be of type str")
         if eedf_type not in ("maxwellian", "druyvesteyn"):
             raise ValueError("eedf_type must be 'maxwellian' or 'druyvesteyn'")
 
+        return Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
+
+    @staticmethod
+    def _validate_and_prepare_eedf_grid(eedf_grid: np.ndarray | None):
         if eedf_grid is None:
             eedf_grid = np.linspace(start=0.0, stop=100.0, num=10000, dtype=float)
         if isinstance(eedf_grid, list | tuple):
@@ -41,9 +57,18 @@ class Model:
         if np.any(eedf_grid < 0.0):
             raise ValueError("All values in eedf_grid must be >= 0.0")
 
-        self.cross_section_set = parse_lxcat_data(lxcat_file)
-        self.eedf_cls = Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
-        self.eedf_grid = eedf_grid
+        return eedf_grid
+
+    @staticmethod
+    def _validate_and_prepare_integrator(integrator: str):
+        if not isinstance(integrator, str):
+            raise TypeError("integrator must be of type str")
+        if integrator not in ("trapezoid", "simpson"):
+            raise ValueError("integrator must be 'simpson' or 'trapezoid'")
+
+        return (
+            compute_rate_simpson if integrator == "simpson" else compute_rate_trapezoid
+        )
 
     def fit(
         self,
@@ -90,7 +115,7 @@ class Model:
 
             # Perform the rate integrals.
             rates = [
-                compute_rate(
+                self.rate_computer(
                     self.eedf_grid, xs_interp, self.eedf_cls(T).pdf(self.eedf_grid)
                 )
                 for T in T_grid

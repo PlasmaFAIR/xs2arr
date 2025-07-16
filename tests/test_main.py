@@ -3,7 +3,7 @@ from numpy import isclose, linspace, sqrt
 
 from xs2arr import Model
 from xs2arr.eedf import Maxwellian
-from xs2arr.rate import compute_rate
+from xs2arr.rate import compute_rate_simpson, compute_rate_trapezoid
 
 EXAMPLE_LXCAT_FILE = "tests/example_lxcat.txt"
 
@@ -27,7 +27,14 @@ def test_rate_integral(T: float):
 
     EEDF = Maxwellian
 
-    rate = compute_rate(energies, xs, EEDF(T).pdf(energies))
+    pdf = EEDF(T).pdf(energies)
+
+    rate = compute_rate_trapezoid(energies, xs, pdf)
+
+    # EEDF is normalised, therefore result should be close to 1.
+    assert isclose(rate, 1.0, atol=1e-3)
+
+    rate = compute_rate_simpson(energies, xs, pdf)
 
     # EEDF is normalised, therefore result should be close to 1.
     assert isclose(rate, 1.0, atol=1e-3)
