@@ -39,6 +39,20 @@ class EEDF(ABC):
 
     @abstractmethod
     def pdf(self, energies: ndarray) -> ndarray:
+        """
+        Calculate the electron energy distribution function (EEDF) probability density.
+
+        Parameters
+        ----------
+        energies : np.ndarray
+            Array of energy values
+
+        Returns
+        -------
+        np.ndarray
+            Probability density values corresponding to the input energies.
+        """
+
         return (
             self._beta1
             * sqrt(energies)
