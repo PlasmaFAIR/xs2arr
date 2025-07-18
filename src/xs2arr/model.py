@@ -82,22 +82,7 @@ class Model:
                 "This method is not intended to be called directly - instantiate an object of the class first"
             )
 
-        if T_grid is not None and mean_E_grid is not None:
-            raise ValueError("Only one of T_grid or mean_E_grid must be provided")
-        if T_grid is None and mean_E_grid is None:
-            T_grid = np.linspace(start=0.001, stop=6.0, num=1000, dtype=float)
-        if mean_E_grid is not None:
-            T_grid = 2.0 * mean_E_grid / 3.0
-        if isinstance(T_grid, list | tuple):
-            T_grid = np.array(T_grid, dtype=float)
-        if not isinstance(T_grid, np.ndarray):
-            raise TypeError("T_grid must be of type ndarray")
-        if T_grid.ndim != 1:
-            raise ValueError("T_grid must be 1-dimensional")
-        if len(T_grid) < 2:
-            raise ValueError("len(T_grid) must be >= 2")
-        if np.any(T_grid < 0.0):
-            raise ValueError("All values in T_grid must be >= 0.0")
+        T_grid = self._validate_and_prepare_T_grid(T_grid, mean_E_grid)
 
         if not isinstance(logarithmic, bool):
             raise TypeError("logarithmic must be of type bool")
@@ -137,6 +122,29 @@ class Model:
             results.append((fitting, a_true, b_true, c_true))
 
         return results
+
+    @staticmethod
+    def _validate_and_prepare_T_grid(
+        T_grid: np.ndarray | None, mean_E_grid: np.ndarray | None
+    ):
+        if T_grid is not None and mean_E_grid is not None:
+            raise ValueError("Only one of T_grid or mean_E_grid must be provided")
+        if T_grid is None and mean_E_grid is None:
+            T_grid = np.linspace(start=0.001, stop=6.0, num=1000, dtype=float)
+        if mean_E_grid is not None:
+            T_grid = 2.0 * mean_E_grid / 3.0
+        if isinstance(T_grid, list | tuple):
+            T_grid = np.array(T_grid, dtype=float)
+        if not isinstance(T_grid, np.ndarray):
+            raise TypeError("T_grid must be of type ndarray")
+        if T_grid.ndim != 1:
+            raise ValueError("T_grid must be 1-dimensional")
+        if len(T_grid) < 2:
+            raise ValueError("len(T_grid) must be >= 2")
+        if np.any(T_grid < 0.0):
+            raise ValueError("All values in T_grid must be >= 0.0")
+
+        return T_grid
 
 
 def _create_fitting_model(logarithmic: bool) -> tuple[FittingModel, Parameters]:
