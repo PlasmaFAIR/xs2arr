@@ -18,55 +18,10 @@ class Model:
         eedf_grid: np.ndarray | None = None,
         integrator: str = "simpson",
     ):
-        self.cross_section_set = self._validate_and_prepare_lxcat_file(lxcat_file)
-        self.eedf_cls = self._validate_and_prepare_eedf(eedf_type)
-        self.eedf_grid = self._validate_and_prepare_eedf_grid(eedf_grid)
-        self.rate_computer = self._validate_and_prepare_integrator(integrator)
-
-    @staticmethod
-    def _validate_and_prepare_lxcat_file(lxcat_file: str | None):
-        if lxcat_file is None:
-            raise ValueError("No lxcat file provided")
-        if not isinstance(lxcat_file, str):
-            raise TypeError("lxcat_file must be of type str")
-        if not lxcat_file:
-            raise ValueError("lxcat_file cannot be an empty string")
-
-        return parse_lxcat_data(lxcat_file)
-
-    @staticmethod
-    def _validate_and_prepare_eedf(eedf_type: str):
-        if not isinstance(eedf_type, str):
-            raise TypeError("eedf_type must be of type str")
-        if eedf_type not in ("maxwellian", "druyvesteyn"):
-            raise ValueError("eedf_type must be 'maxwellian' or 'druyvesteyn'")
-
-        return Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
-
-    @staticmethod
-    def _validate_and_prepare_eedf_grid(eedf_grid: ArrayLike | None):
-        if eedf_grid is None:
-            eedf_grid = np.linspace(start=0.0, stop=100.0, num=10000, dtype=float)
-        eedf_grid = np.asarray(eedf_grid, dtype=float)
-        if eedf_grid.ndim != 1:
-            raise ValueError("eedf_grid must be 1-dimensional")
-        if len(eedf_grid) < 2:
-            raise ValueError("len(eedf_grid) must be >= 2")
-        if np.any(eedf_grid < 0.0):
-            raise ValueError("All values in eedf_grid must be >= 0.0")
-
-        return eedf_grid
-
-    @staticmethod
-    def _validate_and_prepare_integrator(integrator: str):
-        if not isinstance(integrator, str):
-            raise TypeError("integrator must be of type str")
-        if integrator not in ("trapezoid", "simpson"):
-            raise ValueError("integrator must be 'simpson' or 'trapezoid'")
-
-        return (
-            compute_rate_simpson if integrator == "simpson" else compute_rate_trapezoid
-        )
+        self.cross_section_set = _validate_and_prepare_lxcat_file(lxcat_file)
+        self.eedf_cls = _validate_and_prepare_eedf(eedf_type)
+        self.eedf_grid = _validate_and_prepare_eedf_grid(eedf_grid)
+        self.rate_computer = _validate_and_prepare_integrator(integrator)
 
     def fit(
         self,
@@ -80,7 +35,7 @@ class Model:
                 "This method is not intended to be called directly - instantiate an object of the class first"
             )
 
-        T_grid = self._validate_and_prepare_T_grid(T_grid, mean_E_grid)
+        T_grid = _validate_and_prepare_T_grid(T_grid, mean_E_grid)
 
         if not isinstance(logarithmic, bool):
             raise TypeError("logarithmic must be of type bool")
@@ -121,25 +76,66 @@ class Model:
 
         return results
 
-    @staticmethod
-    def _validate_and_prepare_T_grid(
-        T_grid: ArrayLike | None, mean_E_grid: ArrayLike | None
-    ):
-        if T_grid is not None and mean_E_grid is not None:
-            raise ValueError("Only one of T_grid or mean_E_grid must be provided")
-        if T_grid is None and mean_E_grid is None:
-            T_grid = np.linspace(start=0.001, stop=6.0, num=1000, dtype=float)
-        if mean_E_grid is not None:
-            T_grid = 2.0 * np.asarray(mean_E_grid, dtype=float) / 3.0
-        T_grid = np.asarray(T_grid, dtype=float)
-        if T_grid.ndim != 1:
-            raise ValueError("T_grid must be 1-dimensional")
-        if len(T_grid) < 2:
-            raise ValueError("len(T_grid) must be >= 2")
-        if np.any(T_grid < 0.0):
-            raise ValueError("All values in T_grid must be >= 0.0")
 
-        return T_grid
+def _validate_and_prepare_lxcat_file(lxcat_file: str | None):
+    if lxcat_file is None:
+        raise ValueError("No lxcat file provided")
+    if not isinstance(lxcat_file, str):
+        raise TypeError("lxcat_file must be of type str")
+    if not lxcat_file:
+        raise ValueError("lxcat_file cannot be an empty string")
+
+    return parse_lxcat_data(lxcat_file)
+
+
+def _validate_and_prepare_eedf(eedf_type: str):
+    if not isinstance(eedf_type, str):
+        raise TypeError("eedf_type must be of type str")
+    if eedf_type not in ("maxwellian", "druyvesteyn"):
+        raise ValueError("eedf_type must be 'maxwellian' or 'druyvesteyn'")
+
+    return Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
+
+
+def _validate_and_prepare_eedf_grid(eedf_grid: ArrayLike | None):
+    if eedf_grid is None:
+        eedf_grid = np.linspace(start=0.0, stop=100.0, num=10000, dtype=float)
+    eedf_grid = np.asarray(eedf_grid, dtype=float)
+    if eedf_grid.ndim != 1:
+        raise ValueError("eedf_grid must be 1-dimensional")
+    if len(eedf_grid) < 2:
+        raise ValueError("len(eedf_grid) must be >= 2")
+    if np.any(eedf_grid < 0.0):
+        raise ValueError("All values in eedf_grid must be >= 0.0")
+
+    return eedf_grid
+
+
+def _validate_and_prepare_integrator(integrator: str):
+    if not isinstance(integrator, str):
+        raise TypeError("integrator must be of type str")
+    if integrator not in ("trapezoid", "simpson"):
+        raise ValueError("integrator must be 'simpson' or 'trapezoid'")
+
+    return compute_rate_simpson if integrator == "simpson" else compute_rate_trapezoid
+
+
+def _validate_and_prepare_T_grid(
+    T_grid: ArrayLike | None, mean_E_grid: ArrayLike | None
+):
+    if T_grid is not None and mean_E_grid is not None:
+        raise ValueError("Only one of T_grid or mean_E_grid must be provided")
+    if T_grid is None and mean_E_grid is None:
+        T_grid = np.linspace(start=0.001, stop=6.0, num=1000, dtype=float)
+    if mean_E_grid is not None:
+        T_grid = 2.0 * np.asarray(mean_E_grid, dtype=float) / 3.0
+    T_grid = np.asarray(T_grid, dtype=float)
+    if T_grid.ndim != 1:
+        raise ValueError("T_grid must be 1-dimensional")
+    if len(T_grid) < 2:
+        raise ValueError("len(T_grid) must be >= 2")
+    if np.any(T_grid < 0.0):
+        raise ValueError("All values in T_grid must be >= 0.0")
 
 
 def _create_fitting_model(logarithmic: bool) -> tuple[FittingModel, Parameters]:
