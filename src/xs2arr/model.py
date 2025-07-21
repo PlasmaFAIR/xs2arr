@@ -1,6 +1,7 @@
 import numpy as np
 from lmfit import Model as FittingModel
 from lmfit import Parameters, create_params
+from numpy.typing import ArrayLike
 
 from xs2arr.cross_section import interpolate_xs
 from xs2arr.eedf import Druyvesteyn, Maxwellian
@@ -43,13 +44,10 @@ class Model:
         return Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
 
     @staticmethod
-    def _validate_and_prepare_eedf_grid(eedf_grid: np.ndarray | None):
+    def _validate_and_prepare_eedf_grid(eedf_grid: ArrayLike | None):
         if eedf_grid is None:
             eedf_grid = np.linspace(start=0.0, stop=100.0, num=10000, dtype=float)
-        if isinstance(eedf_grid, list | tuple):
-            eedf_grid = np.array(eedf_grid, dtype=float)
-        if not isinstance(eedf_grid, np.ndarray):
-            raise TypeError("eedf_grid must be of type ndarray")
+        eedf_grid = np.asarray(eedf_grid, dtype=float)
         if eedf_grid.ndim != 1:
             raise ValueError("eedf_grid must be 1-dimensional")
         if len(eedf_grid) < 2:
@@ -125,18 +123,15 @@ class Model:
 
     @staticmethod
     def _validate_and_prepare_T_grid(
-        T_grid: np.ndarray | None, mean_E_grid: np.ndarray | None
+        T_grid: ArrayLike | None, mean_E_grid: ArrayLike | None
     ):
         if T_grid is not None and mean_E_grid is not None:
             raise ValueError("Only one of T_grid or mean_E_grid must be provided")
         if T_grid is None and mean_E_grid is None:
             T_grid = np.linspace(start=0.001, stop=6.0, num=1000, dtype=float)
         if mean_E_grid is not None:
-            T_grid = 2.0 * mean_E_grid / 3.0
-        if isinstance(T_grid, list | tuple):
-            T_grid = np.array(T_grid, dtype=float)
-        if not isinstance(T_grid, np.ndarray):
-            raise TypeError("T_grid must be of type ndarray")
+            T_grid = 2.0 * np.asarray(mean_E_grid, dtype=float) / 3.0
+        T_grid = np.asarray(T_grid, dtype=float)
         if T_grid.ndim != 1:
             raise ValueError("T_grid must be 1-dimensional")
         if len(T_grid) < 2:
