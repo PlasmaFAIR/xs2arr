@@ -280,6 +280,8 @@ def _validate_and_prepare_T_grid(
     if np.any(T_grid < 0.0):
         raise ValueError("All values in T_grid must be >= 0.0")
 
+    return T_grid
+
 
 def _create_fitting_model(logarithmic: bool) -> tuple[FittingModel, Parameters]:
     """
