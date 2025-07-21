@@ -1,12 +1,13 @@
+import numpy as np
 from lmfit import Model as FittingModel
-from lmfit import Parameters
-from numpy import array, asarray, linspace, ndarray, sqrt
+from lmfit import Parameters, create_params
+from numpy.typing import ArrayLike
 
 from xs2arr.cross_section import interpolate_xs
 from xs2arr.eedf import Druyvesteyn, Maxwellian
 from xs2arr.io import parse_lxcat_data
-from xs2arr.rate import compute_rate
-from xs2arr.utils import arrhenius, m_e, q
+from xs2arr.rate import compute_rate_simpson, compute_rate_trapezoid
+from xs2arr.utils import arrhenius, arrhenius_log, m_e, q
 
 
 class Model:
@@ -14,8 +15,16 @@ class Model:
         self,
         lxcat_file: str | None = None,
         eedf_type: str = "maxwellian",
-        eedf_grid: ndarray | None = None,
+        eedf_grid: np.ndarray | None = None,
+        integrator: str = "simpson",
     ):
+        self.cross_section_set = self._validate_and_prepare_lxcat_file(lxcat_file)
+        self.eedf_cls = self._validate_and_prepare_eedf(eedf_type)
+        self.eedf_grid = self._validate_and_prepare_eedf_grid(eedf_grid)
+        self.rate_computer = self._validate_and_prepare_integrator(integrator)
+
+    @staticmethod
+    def _validate_and_prepare_lxcat_file(lxcat_file: str | None):
         if lxcat_file is None:
             raise ValueError("No lxcat file provided")
         if not isinstance(lxcat_file, str):
@@ -23,85 +32,154 @@ class Model:
         if not lxcat_file:
             raise ValueError("lxcat_file cannot be an empty string")
 
+        return parse_lxcat_data(lxcat_file)
+
+    @staticmethod
+    def _validate_and_prepare_eedf(eedf_type: str):
         if not isinstance(eedf_type, str):
             raise TypeError("eedf_type must be of type str")
         if eedf_type not in ("maxwellian", "druyvesteyn"):
             raise ValueError("eedf_type must be 'maxwellian' or 'druyvesteyn'")
 
+        return Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
+
+    @staticmethod
+    def _validate_and_prepare_eedf_grid(eedf_grid: ArrayLike | None):
         if eedf_grid is None:
-            eedf_grid = linspace(start=0.0, stop=100.0, num=10000, dtype=float)
-        if isinstance(eedf_grid, list | tuple):
-            eedf_grid = array(eedf_grid, dtype=float)
-        if not isinstance(eedf_grid, ndarray):
-            raise TypeError("eedf_grid must be of type ndarray")
+            eedf_grid = np.linspace(start=0.0, stop=100.0, num=10000, dtype=float)
+        eedf_grid = np.asarray(eedf_grid, dtype=float)
         if eedf_grid.ndim != 1:
             raise ValueError("eedf_grid must be 1-dimensional")
         if len(eedf_grid) < 2:
             raise ValueError("len(eedf_grid) must be >= 2")
-        if any(eedf_grid < 0.0):
+        if np.any(eedf_grid < 0.0):
             raise ValueError("All values in eedf_grid must be >= 0.0")
 
-        self.cross_section_set = parse_lxcat_data(lxcat_file)
-        self.eedf_cls = Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
-        self.eedf_grid = eedf_grid
+        return eedf_grid
 
-    def arrhenius(
-        self, T_grid: ndarray | None = None, mean_E_grid: ndarray | None = None
-    ):
+    @staticmethod
+    def _validate_and_prepare_integrator(integrator: str):
+        if not isinstance(integrator, str):
+            raise TypeError("integrator must be of type str")
+        if integrator not in ("trapezoid", "simpson"):
+            raise ValueError("integrator must be 'simpson' or 'trapezoid'")
+
+        return (
+            compute_rate_simpson if integrator == "simpson" else compute_rate_trapezoid
+        )
+
+    def fit(
+        self,
+        T_grid: np.ndarray | None = None,
+        mean_E_grid: np.ndarray | None = None,
+        logarithmic: bool = True,
+    ) -> list[tuple[FittingModel, float, float, float]]:
         # Only allow a user to call arrhenius from an instantiated object of the class.
         if isinstance(self, type):
             raise TypeError(
                 "This method is not intended to be called directly - instantiate an object of the class first"
             )
 
-        if T_grid is not None and mean_E_grid is not None:
-            raise ValueError("Only one of T_grid or mean_E_grid must be provided")
-        if T_grid is None and mean_E_grid is None:
-            T_grid = linspace(start=0.001, stop=6.0, num=1000, dtype=float)
-        if mean_E_grid is not None:
-            T_grid = 2.0 * mean_E_grid / 3.0
-        if isinstance(T_grid, list | tuple):
-            T_grid = array(T_grid, dtype=float)
-        if not isinstance(T_grid, ndarray):
-            raise TypeError("T_grid must be of type ndarray")
-        if T_grid.ndim != 1:
-            raise ValueError("T_grid must be 1-dimensional")
-        if len(T_grid) < 2:
-            raise ValueError("len(T_grid) must be >= 2")
-        if any(T_grid < 0.0):
-            raise ValueError("All values in T_grid must be >= 0.0")
+        T_grid = self._validate_and_prepare_T_grid(T_grid, mean_E_grid)
 
-        # For the Arrhenius equation fittings.
-        params = Parameters()
-        params.add("a", value=1e-14)
-        params.add("b", value=0.1)
-        params.add("c", value=-10.0, max=0.0)
+        if not isinstance(logarithmic, bool):
+            raise TypeError("logarithmic must be of type bool")
+
+        regressor, params = _create_fitting_model(logarithmic)
 
         results = []
 
         for cross_section_info in self.cross_section_set.cross_sections:
-            xs_energy = asarray(cross_section_info.data["energy"], dtype=float)
-            xs = asarray(cross_section_info.data["cross section"], dtype=float)
+            xs_energy = np.asarray(cross_section_info.data["energy"], dtype=float)
+            xs = np.asarray(cross_section_info.data["cross section"], dtype=float)
 
             # Interpolate the cross section onto the EEDF grid.
             xs_interp = interpolate_xs(self.eedf_grid, xs_energy, xs)
 
             # Perform the rate integrals.
             rates = [
-                compute_rate(
+                self.rate_computer(
                     self.eedf_grid, xs_interp, self.eedf_cls(T).pdf(self.eedf_grid)
                 )
                 for T in T_grid
             ]
 
-            rates = asarray(rates, dtype=float)
+            rates = np.asarray(rates, dtype=float)
 
             # Convert rates to appropriate units.
-            rates *= sqrt(2.0 * q / m_e)
+            rates *= np.sqrt(2.0 * q / m_e)
 
-            # And compute the a, b and c Arrhenius coefficients.
-            regressor = FittingModel(arrhenius, independent_vars=["T"])
+            T_grid, rates = _remove_bad_data(T_grid, rates, logarithmic)
 
-            results.append(regressor.fit(rates, params, T=T_grid))
+            rates = np.log10(rates) if logarithmic else rates
+
+            fitting = regressor.fit(rates, params, T=T_grid)
+
+            a_true, b_true, c_true = _get_true_abc(fitting, logarithmic)
+
+            results.append((fitting, a_true, b_true, c_true))
 
         return results
+
+    @staticmethod
+    def _validate_and_prepare_T_grid(
+        T_grid: ArrayLike | None, mean_E_grid: ArrayLike | None
+    ):
+        if T_grid is not None and mean_E_grid is not None:
+            raise ValueError("Only one of T_grid or mean_E_grid must be provided")
+        if T_grid is None and mean_E_grid is None:
+            T_grid = np.linspace(start=0.001, stop=6.0, num=1000, dtype=float)
+        if mean_E_grid is not None:
+            T_grid = 2.0 * np.asarray(mean_E_grid, dtype=float) / 3.0
+        T_grid = np.asarray(T_grid, dtype=float)
+        if T_grid.ndim != 1:
+            raise ValueError("T_grid must be 1-dimensional")
+        if len(T_grid) < 2:
+            raise ValueError("len(T_grid) must be >= 2")
+        if np.any(T_grid < 0.0):
+            raise ValueError("All values in T_grid must be >= 0.0")
+
+        return T_grid
+
+
+def _create_fitting_model(logarithmic: bool) -> tuple[FittingModel, Parameters]:
+    if logarithmic:
+        params = create_params(
+            log10_a={"value": -14.0}, b=0.1, c={"value": -10.0, "max": 0.0}
+        )
+    else:
+        params = create_params(
+            a={"value": 1e-14}, b=0.1, c={"value": -10.0, "max": 0.0}
+        )
+
+    regressor = FittingModel(
+        arrhenius_log if logarithmic else arrhenius, independent_vars=["T"]
+    )
+
+    return regressor, params
+
+
+def _remove_bad_data(
+    T_grid: np.ndarray, rates: np.ndarray, logarithmic: bool = True
+) -> tuple[np.ndarray, np.ndarray]:
+    if not logarithmic:
+        return T_grid, rates
+
+    # Remove entries that have rate exactly as 0 if doing logarithmic fitting.
+    mask = rates > 0.0
+
+    return T_grid[mask], rates[mask]
+
+
+def _get_true_abc(
+    fitting: FittingModel, logarithmic: bool = True
+) -> tuple[float, float, float]:
+    a = (
+        (10.0 ** fitting.params["log10_a"].value)
+        if logarithmic
+        else fitting.params["a"].value
+    )
+    b = fitting.params["b"].value
+    c = fitting.params["c"].value
+
+    return a, b, c
