@@ -1,6 +1,9 @@
+from collections.abc import Callable
+
 import numpy as np
 from lmfit import Model as FittingModel
 from lmfit import Parameters, create_params
+from lxcat_data_parser import CrossSectionSet
 from numpy.typing import ArrayLike
 
 from xs2arr.cross_section import interpolate_xs
@@ -13,12 +16,12 @@ from xs2arr.utils import arrhenius, arrhenius_log, m_e, q
 class Model:
     def __init__(
         self,
-        lxcat_file: str | None = None,
+        lxcat_file: str,
         *,
         eedf_type: str = "maxwellian",
         eedf_grid: np.ndarray | None = None,
         integrator: str = "simpson",
-    ):
+    ) -> None:
         self.cross_section_set = _validate_and_prepare_lxcat_file(lxcat_file)
         self.eedf_cls = _validate_and_prepare_eedf(eedf_type)
         self.eedf_grid = _validate_and_prepare_eedf_grid(eedf_grid)
@@ -26,33 +29,25 @@ class Model:
 
     def fit(
         self,
-        T_grid: np.ndarray | None = None,
+        T_grid: ArrayLike | None = None,
         *,
-        mean_E_grid: np.ndarray | None = None,
+        mean_E_grid: ArrayLike | None = None,
         logarithmic: bool = True,
     ) -> list[tuple[FittingModel, float, float, float]]:
         """
-        Fits Arrhenius equation to rate coefficients calculated from cross sections.
+        Fits the Arrhenius equation to rate coefficients a b, and c, calculated from cross sections. Returns the fitting
+        model and calculated parameters for each cross section.
 
         Parameters
         ----------
-        T_grid : np.ndarray | None, optional
+        T_grid : optional
             Temperature grid for rate calculations. If None and mean_E_grid is None,
             a default grid of 1000 points between 0.001 and 6.0 K will be used.
-        mean_E_grid : np.ndarray | None, optional
+        mean_E_grid : optional
             Mean energy grid to define the temperature grid. If provided, T_grid will be
             calculated as 2/3 of mean_E_grid.
-        logarithmic : bool, optional
+        logarithmic : optional
             Whether to perform the fitting in logarithmic space. Default is True.
-
-        Returns
-        -------
-        list[tuple[FittingModel, float, float, float]]
-            List of tuples for each cross section, containing:
-            - FittingModel: The fitted Arrhenius model
-            - float: Pre-exponential factor (a)
-            - float: Temperature exponent (b)
-            - float: Activation energy in units of temperature (c)
 
         Raises
         ------
@@ -103,58 +98,45 @@ class Model:
 
             fitting = regressor.fit(rates, params, T=T_grid)
 
-            a_true, b_true, c_true = _get_true_abc(fitting, logarithmic)
-
-            results.append((fitting, a_true, b_true, c_true))
+            results.append((fitting, *_get_true_abc(fitting, logarithmic)))
 
         return results
 
 
-def _validate_and_prepare_lxcat_file(lxcat_file: str | None):
+def _validate_and_prepare_lxcat_file(lxcat_file: str) -> CrossSectionSet:
     """
-    Validates and prepares the LXCAT data file for cross section analysis.
+    Validates and prepares the LXCAT data file for cross section analysis. Returns the LXCat data parsed as a set of
+    cross sections.
 
     Parameters
     ----------
-    lxcat_file : str | None
+    lxcat_file
         Path to the LXCAT data file containing cross section information.
-
-    Returns
-    -------
-    CrossSectionSet
-        Parsed cross section data from the LXCAT file.
 
     Raises
     ------
     ValueError
-        If lxcat_file is None or an empty string.
+        If lxcat_file is an empty string.
     TypeError
         If lxcat_file is not a string.
     """
 
-    if lxcat_file is None:
-        raise ValueError("No lxcat file provided")
     if not isinstance(lxcat_file, str):
-        raise TypeError("lxcat_file must be of type str")
+        raise TypeError(f"lxcat_file must be of type str, found {type(lxcat_file)}")
     if not lxcat_file:
         raise ValueError("lxcat_file cannot be an empty string")
 
     return parse_lxcat_data(lxcat_file)
 
 
-def _validate_and_prepare_eedf(eedf_type: str):
+def _validate_and_prepare_eedf(eedf_type: str) -> type[Maxwellian | Druyvesteyn]:
     """
-    Validates and prepares the electron energy distribution function (EEDF) type.
+    Validates and prepares the electron energy distribution function (EEDF) type. Returns the EEDF class.
 
     Parameters
     ----------
-    eedf_type : str
+    eedf_type
         Type of EEDF to use. Must be either 'maxwellian' or 'druyvesteyn'.
-
-    Returns
-    -------
-    type
-        The EEDF class (either Maxwellian or Druyvesteyn).
 
     Raises
     ------
@@ -172,24 +154,19 @@ def _validate_and_prepare_eedf(eedf_type: str):
     return Maxwellian if eedf_type == "maxwellian" else Druyvesteyn
 
 
-def _validate_and_prepare_eedf_grid(eedf_grid: ArrayLike | None):
+def _validate_and_prepare_eedf_grid(eedf_grid: ArrayLike | None) -> np.ndarray:
     """
-    Validates and prepares the energy grid for the electron energy distribution function (EEDF).
+    Validates and prepares the energy grid for the electron energy distribution function (EEDF). Returns the validated
+    EEDF grid.
 
     Parameters
     ----------
-    eedf_grid : np.ndarray | None
-        Grid of energy values for EEDF calculation. If None, a default grid of 10000 points between 0.0 and 100.0 will be used.
-
-    Returns
-    -------
-    np.ndarray
-        The validated EEDF grid.
+    eedf_grid
+        Grid of energy values for EEDF calculation. If None, a default grid of 10000 points between 0.0 and 100.0 will
+        be used.
 
     Raises
     ------
-    TypeError
-        If eedf_grid is not a numpy array or cannot be converted to one.
     ValueError
         If eedf_grid is not 1-dimensional, has less than 2 points, or contains negative values.
     """
@@ -206,19 +183,16 @@ def _validate_and_prepare_eedf_grid(eedf_grid: ArrayLike | None):
     return eedf_grid
 
 
-def _validate_and_prepare_integrator(integrator: str):
+def _validate_and_prepare_integrator(
+    integrator: str,
+) -> Callable[[np.array, np.array, np.array], float]:
     """
-    Validates and prepares the integration method for rate computation.
+    Validates and prepares the integration method for rate computation. Returns the rate computation function.
 
     Parameters
     ----------
-    integrator : str
+    integrator
         The integration method to use. Must be either 'simpson' or 'trapezoid'.
-
-    Returns
-    -------
-    callable
-        The selected rate computation function (either compute_rate_simpson or compute_rate_trapezoid).
 
     Raises
     ------
@@ -238,33 +212,26 @@ def _validate_and_prepare_integrator(integrator: str):
 
 def _validate_and_prepare_T_grid(
     T_grid: ArrayLike | None, mean_E_grid: ArrayLike | None
-):
+) -> np.ndarray:
     """
-    Validates and prepares the temperature grid for rate calculations.
+    Validates and prepares the temperature grid for rate calculations. Returns the validated temperature grid.
 
     Parameters
     ----------
-    T_grid : np.ndarray | None
+    T_grid
         Temperature grid for rate calculations. If None and mean_E_grid is None,
         a default grid of 1000 points between 0.001 and 6.0 K will be used.
-    mean_E_grid : np.ndarray | None
+    mean_E_grid
         Mean energy grid to define the temperature grid. If provided, T_grid will be
         calculated as 2/3 of mean_E_grid.
-
-    Returns
-    -------
-    np.ndarray
-        The validated temperature grid.
 
     Raises
     ------
     ValueError
         If both T_grid and mean_E_grid are provided,
-        If T_grid is not 1-dimensional,
-        If T_grid has less than 2 points,
-        If T_grid contains negative values.
-    TypeError
-        If T_grid is not a numpy array or cannot be converted to one.
+        If provided grid is not 1-dimensional,
+        If provided grid has less than 2 points,
+        If provided grid contains negative values.
     """
     if T_grid is not None and mean_E_grid is not None:
         raise ValueError("Only one of T_grid or mean_E_grid must be provided")
@@ -285,22 +252,12 @@ def _validate_and_prepare_T_grid(
 
 def _create_fitting_model(logarithmic: bool) -> tuple[FittingModel, Parameters]:
     """
-    Creates a fitting model and its parameters for Arrhenius equation fitting.
+    Creates a fitting model and its parameters for Arrhenius equation fitting. Returns the model and parameters.
 
     Parameters
     ----------
-    logarithmic : bool
+    logarithmic
         Whether to use logarithmic form of the Arrhenius equation for fitting.
-
-    Returns
-    -------
-    tuple[FittingModel, Parameters]
-        A tuple containing:
-        - FittingModel: The regression model for fitting
-        - Parameters: Initial parameters for the fitting:
-          - log10_a/a: Pre-exponential factor (log10 form if logarithmic)
-          - b: Temperature exponent
-          - c: Activation energy (in units of temperature)
 
     Notes
     -----
@@ -329,24 +286,21 @@ def _remove_bad_data(
     T_grid: np.ndarray, rates: np.ndarray, logarithmic: bool = True
 ) -> tuple[np.ndarray, np.ndarray]:
     """
-    Removes data points with zero rates when performing logarithmic fitting.
+    Removes data points with zero rates when performing logarithmic fitting. Returns the filtered temperature grid and
+    rates array.
 
     Parameters
     ----------
-    T_grid : np.ndarray
+    T_grid
         Array of temperature values.
-    rates : np.ndarray
+    rates
         Array of rate values corresponding to the temperature grid.
-    logarithmic : bool, optional
+    logarithmic : optional
         Whether logarithmic fitting is being performed. Default is True.
 
-    Returns
-    -------
-    tuple[np.ndarray, np.ndarray]
-        A tuple containing:
-        - The filtered temperature grid
-        - The filtered rates array
-        If logarithmic is False, returns the original arrays unmodified.
+    Notes
+    -----
+        If logarithmic is False then the original arrays are unmodified.
     """
 
     if not logarithmic:
@@ -362,22 +316,15 @@ def _get_true_abc(
     fitting: FittingModel, logarithmic: bool = True
 ) -> tuple[float, float, float]:
     """
-    Extracts the true a, b, and c parameters from the fitting model.
+    Extracts the true a, b, and c parameters from the fitting model. Returns a tuple containing the a, b, and c where a
+    has been converted from log10 if logarithmic is True.
 
     Parameters
     ----------
-    fitting : FittingModel
+    fitting
         The fitted model containing the Arrhenius parameters.
-    logarithmic : bool, optional
+    logarithmic : optional
         Whether the fitting was performed using logarithmic form. Default is True.
-
-    Returns
-    -------
-    tuple[float, float, float]
-        A tuple containing:
-        - a: The pre-exponential factor (converted from log10 if logarithmic)
-        - b: The temperature exponent
-        - c: The activation energy (in units of temperature)
     """
 
     a = (
