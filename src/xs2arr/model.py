@@ -42,7 +42,7 @@ class Model:
         ----------
         T_grid : optional
             Temperature grid for rate calculations. If None and mean_E_grid is None,
-            a default grid of 1000 points between 0.001 and 6.0 K will be used.
+            a default grid of 1000 points between 0.001 and 6 K will be used.
         mean_E_grid : optional
             Mean energy grid to define the temperature grid. If provided, T_grid will be
             calculated as 2/3 of mean_E_grid.
@@ -162,7 +162,7 @@ def _validate_and_prepare_eedf_grid(eedf_grid: ArrayLike | None) -> np.ndarray:
     Parameters
     ----------
     eedf_grid
-        Grid of energy values for EEDF calculation. If None, a default grid of 10000 points between 0.0 and 100.0 will
+        Grid of energy values for EEDF calculation. If None, a default grid of 10000 points between 0 and 100 will
         be used.
 
     Raises
@@ -220,7 +220,7 @@ def _validate_and_prepare_T_grid(
     ----------
     T_grid
         Temperature grid for rate calculations. If None and mean_E_grid is None,
-        a default grid of 1000 points between 0.001 and 6.0 K will be used.
+        a default grid of 1000 points between 0.001 and 6 K will be used.
     mean_E_grid
         Mean energy grid to define the temperature grid. If provided, T_grid will be
         calculated as 2/3 of mean_E_grid.
@@ -261,10 +261,11 @@ def _create_fitting_model(logarithmic: bool) -> tuple[FittingModel, Parameters]:
 
     Notes
     -----
-    Default parameter values are:
-    - log10_a = -14.0 (or a = 1e-14 for non-logarithmic)
-    - b = 0.1
-    - c = -10.0 (with maximum value of 0.0)
+        Default parameter values are:
+
+        - ``log10_a = -14.0`` (or ``a = 1e-14`` for non-logarithmic)
+        - ``b = 0.1``
+        - ``c = -10.0`` (with maximum value of 0)
     """
     if logarithmic:
         params = create_params(
@@ -317,7 +318,7 @@ def _get_true_abc(
 ) -> tuple[float, float, float]:
     """
     Extracts the true a, b, and c parameters from the fitting model. Returns a tuple containing the a, b, and c where a
-    has been converted from log10 if logarithmic is True.
+    has been converted from ``log10`` if logarithmic is True.
 
     Parameters
     ----------
