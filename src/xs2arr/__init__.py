@@ -10,7 +10,7 @@ from xs2arr.eedf import EEDF, Druyvesteyn, Maxwellian
 from xs2arr.io import parse_lxcat_data
 from xs2arr.model import Model
 from xs2arr.rate import compute_rate_simpson, compute_rate_trapezoid
-from xs2arr.utils import arrhenius, arrhenius_log, constants
+from xs2arr.utils import arrhenius, arrhenius_log
 
 try:
     __version__ = _version(__name__)
@@ -28,7 +28,6 @@ __all__ = [
     "arrhenius_log",
     "compute_rate_simpson",
     "compute_rate_trapezoid",
-    "constants",
     "interpolate_xs",
     "parse_lxcat_data",
 ]

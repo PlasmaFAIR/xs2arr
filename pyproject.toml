@@ -17,6 +17,7 @@ dependencies = [
     "lxcat-data-parser@git+https://github.com/avadean/lxcat_data_parser",
     "numpy>=2.0.0",
     "pandas>=2.3.0",
+    "scipy>=1.16.0",
 ]
 dynamic = ["version"]
 

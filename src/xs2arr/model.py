@@ -5,12 +5,13 @@ from lmfit import Model as FittingModel
 from lmfit import Parameters, create_params
 from lxcat_data_parser import CrossSectionSet
 from numpy.typing import ArrayLike
+from scipy import constants
 
 from xs2arr.cross_section import interpolate_xs
 from xs2arr.eedf import Druyvesteyn, Maxwellian
 from xs2arr.io import parse_lxcat_data
 from xs2arr.rate import compute_rate_simpson, compute_rate_trapezoid
-from xs2arr.utils import arrhenius, arrhenius_log, constants
+from xs2arr.utils import arrhenius, arrhenius_log
 
 
 class Model:
@@ -90,7 +91,9 @@ class Model:
             rates = np.asarray(rates, dtype=float)
 
             # Convert rates to appropriate units.
-            rates *= np.sqrt(2.0 * constants.q / constants.m_e)
+            rates *= np.sqrt(
+                2.0 * constants.elementary_charge / constants.electron_mass
+            )
 
             T_grid, rates = _remove_bad_data(T_grid, rates, logarithmic)
 

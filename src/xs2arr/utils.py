@@ -1,15 +1,8 @@
 from collections.abc import Callable
 from numbers import Real
-from types import SimpleNamespace
 
 import numpy as np
 from numpy.typing import ArrayLike
-
-# CODATA 2022 values from Rev. Mod. Phys. 97, 025002.
-constants = SimpleNamespace(
-    q=1.602176634e-19,  # Elementary charge
-    m_e=9.1093837139e-31,  # Electron mass
-)
 
 _log10_e = np.log10(np.exp(1.0))
 
