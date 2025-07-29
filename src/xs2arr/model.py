@@ -10,7 +10,7 @@ from xs2arr.cross_section import interpolate_xs
 from xs2arr.eedf import Druyvesteyn, Maxwellian
 from xs2arr.io import parse_lxcat_data
 from xs2arr.rate import compute_rate_simpson, compute_rate_trapezoid
-from xs2arr.utils import arrhenius, arrhenius_log, m_e, q
+from xs2arr.utils import arrhenius, arrhenius_log, constants
 
 
 class Model:
@@ -90,7 +90,7 @@ class Model:
             rates = np.asarray(rates, dtype=float)
 
             # Convert rates to appropriate units.
-            rates *= np.sqrt(2.0 * q / m_e)
+            rates *= np.sqrt(2.0 * constants.q / constants.m_e)
 
             T_grid, rates = _remove_bad_data(T_grid, rates, logarithmic)
 
