@@ -37,6 +37,7 @@ lint = [
 jupyter = [
     "ipykernel>=6.30.0",
     "matplotlib>=3.10.3",
+    "notebook>=7.4.5",
     "pygments>=2.19.2",
 ]
 
