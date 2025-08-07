@@ -9,11 +9,21 @@ _log10_e = np.log10(np.exp(1.0))
 
 def arrhenius(T: ArrayLike, a: float, b: float, c: float) -> np.ndarray:
     T = np.asarray(T, dtype=float)
+
+    a = validate_real(a, "a", lambda x: x > 0.0)
+    b = validate_real(b, "b")
+    c = validate_real(c, "c", lambda x: x < 0.0)
+
     return a * T**b * np.exp(c / T)
 
 
 def arrhenius_log(T: ArrayLike, log10_a: float, b: float, c: float) -> np.ndarray:
     T = np.asarray(T, dtype=float)
+
+    log10_a = validate_real(log10_a, "log10_a")
+    b = validate_real(b, "b")
+    c = validate_real(c, "c", lambda x: x < 0.0)
+
     return log10_a + b * np.log10(T) + _log10_e * c / T
 
 
