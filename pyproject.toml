@@ -27,6 +27,7 @@ xs2arr = "xs2arr.main:run"
 [project.optional-dependencies]
 tests = [
     "hypothesis>=6.135.16",
+    "nbmake>=1.5.5",
     "pytest>=8.4.1",
     "pytest-cov>=6.2.1",
     "syrupy>=4.9.1",
