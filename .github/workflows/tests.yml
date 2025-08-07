@@ -28,8 +28,16 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[tests]
+        pip install -e .[tests,jupyter]
 
     - name: Test with pytest
       run: |
         pytest -v
+
+    - name: Create ipykernel for Jupyter notebook
+      run: |
+        python -m ipykernel install --user --name uv-env --display-name "Python (uv-env)"
+
+    - name: Test notebook
+      run: |
+        pytest -v --nbmake notebooks/new_notebook.ipynb
