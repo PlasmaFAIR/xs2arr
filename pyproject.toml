@@ -25,6 +25,12 @@ dynamic = ["version"]
 xs2arr = "xs2arr.main:run"
 
 [project.optional-dependencies]
+docs = [
+    "myst-nb>=1.3.0",
+    "sphinx>=8.2.3",
+    "sphinx-autodoc-typehints>=3.2.0",
+    "sphinx-book-theme>=1.1.4",
+]
 tests = [
     "hypothesis>=6.135.16",
     "nbmake>=1.5.5",
