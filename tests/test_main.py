@@ -57,7 +57,7 @@ def test_model_init_errors():
     with pytest.raises(ValueError, match=re.escape("len(eedf_grid) must be >= 2")):
         Model(EXAMPLE_LXCAT_FILE_SHORT, eedf_grid=[1])
 
-    with pytest.raises(ValueError, match="All values in eedf_grid must be >= 0.0"):
+    with pytest.raises(ValueError, match=r"All values in eedf_grid must be >= 0.0"):
         Model(EXAMPLE_LXCAT_FILE_SHORT, eedf_grid=[-1, 2, 8])
 
     with pytest.raises(TypeError, match="integrator must be of type str"):
@@ -100,7 +100,7 @@ def test_model_fit_errors():
     with pytest.raises(ValueError, match=re.escape("len(T_grid) must be >= 2")):
         model.fit(T_grid=[1])
 
-    with pytest.raises(ValueError, match="All values in T_grid must be >= 0.0"):
+    with pytest.raises(ValueError, match=r"All values in T_grid must be >= 0.0"):
         model.fit(T_grid=[-1, 2, 8])
 
     with pytest.raises(TypeError, match="logarithmic must be of type bool"):
@@ -125,7 +125,7 @@ def test_interpolation(snapshot):
 def test_interpolation_errors():
     """Test the interpolation of the EEDF for errors."""
 
-    with pytest.raises(ValueError, match="All values in xs must be >= 0.0"):
+    with pytest.raises(ValueError, match=r"All values in xs must be >= 0.0"):
         interpolate_xs([1.0, 2.0], [0.0, 1.0], [0.0, -1.0])
 
 
