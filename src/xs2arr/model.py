@@ -27,6 +27,7 @@ class Model:
         self.eedf_cls = _validate_and_prepare_eedf(eedf_type)
         self.eedf_grid = _validate_and_prepare_eedf_grid(eedf_grid)
         self.rate_computer = _validate_and_prepare_integrator(integrator)
+        self.fitting_results = None
 
     def fit(
         self,
@@ -34,10 +35,10 @@ class Model:
         *,
         mean_E_grid: ArrayLike | None = None,
         logarithmic: bool = True,
-    ) -> list[tuple[FittingModel, float, float, float]]:
+    ) -> None:
         """
-        Fits the Arrhenius equation to rate coefficients a b, and c, calculated from cross sections. Returns the fitting
-        model and calculated parameters for each cross section.
+        Fits the Arrhenius equation to rate coefficients a b, and c, calculated from cross sections. Stores results in
+        model.
 
         Parameters
         ----------
@@ -101,9 +102,43 @@ class Model:
 
             fitting = regressor.fit(rates, params, T=T_grid)
 
-            results.append((fitting, *_get_true_abc(fitting, logarithmic)))
+            results.append(fitting)
 
-        return results
+        self.fitting_results = results
+
+    def get_abc(self) -> list[tuple[float, float, float]]:
+        """
+        Extracts the fitted Arrhenius parameters (a, b, c) for each cross section in the set.
+
+        Raises
+        ------
+        ValueError
+            If no fitting results are available (fit() hasn't been called yet).
+        """
+
+        if self.fitting_results is None:
+            raise ValueError("No fitting results to extract")
+
+        return [
+            _get_true_abc(fitting_results) for fitting_results in self.fitting_results
+        ]
+
+    def write_results(self, output_file: str) -> None:
+        """
+        Write results determined by the Arrhenius fitting method to a file.
+
+        Parameters
+        ----------
+        output_file : str
+            Output file to write formatted results to."""
+
+        if self.fitting_results is None:
+            raise ValueError("No fitting results to write")
+
+        if not isinstance(output_file, str):
+            raise TypeError("Output file must be of type str")
+        if not output_file.strip():
+            raise ValueError("Output file cannot be an empty string")
 
 
 def _validate_and_prepare_lxcat_file(lxcat_file: str) -> CrossSectionSet:
@@ -316,20 +351,32 @@ def _remove_bad_data(
     return T_grid[mask], rates[mask]
 
 
-def _get_true_abc(
-    fitting: FittingModel, logarithmic: bool = True
-) -> tuple[float, float, float]:
+def _get_true_abc(fitting: FittingModel) -> tuple[float, float, float]:
     """
     Extracts the true a, b, and c parameters from the fitting model. Returns a tuple containing the a, b, and c where a
-    has been converted from ``log10`` if logarithmic is True.
+    has been converted from ``log10`` if a logarithmic fitting was performed.
 
     Parameters
     ----------
     fitting
         The fitted model containing the Arrhenius parameters.
-    logarithmic : optional
-        Whether the fitting was performed using logarithmic form. Default is True.
     """
+
+    if not ("log10_a" in fitting.params or "a" in fitting.params):
+        raise ValueError("Arrhenius parameter for 'a' not found in the model")
+
+    if "log10_a" in fitting.params and "a" in fitting.params:
+        raise ValueError(
+            "Both 'log10_a' and 'a' parameters found in the model. Only one should be used"
+        )
+
+    if "b" not in fitting.params:
+        raise ValueError("Arrhenius parameter for 'b' not found in the model")
+
+    if "c" not in fitting.params:
+        raise ValueError("Arrhenius parameter for 'c' not found in the model")
+
+    logarithmic = "log10_a" in fitting.params
 
     a = (
         (10.0 ** fitting.params["log10_a"].value)

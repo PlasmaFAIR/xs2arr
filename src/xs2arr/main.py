@@ -22,7 +22,9 @@ def run() -> int:
 
     model = Model(args.input_file)
 
-    results = model.fit()  # noqa: F841
+    model.fit()
+
+    model.write_results(args.output_file)
 
     return 0
 
