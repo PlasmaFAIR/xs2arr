@@ -6,9 +6,8 @@
 xs2arr documentation
 ====================
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+Calculates Arrhenius coefficients for sets of electron and ion scattering cross sections through fitting of calculated
+rates versus temperature.
 
 
 .. toctree::
