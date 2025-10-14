@@ -82,7 +82,7 @@ def test_model_fit(snapshot):
 
     abc = np.array([(a, b, c) for _, a, b, c in results], dtype=float)
 
-    assert np.round(abc, 6).tolist() == snapshot
+    snapshot.check(abc, rtol=1e-05, atol=1e-08)
 
 
 def test_model_fit_errors():
@@ -119,7 +119,7 @@ def test_interpolation(snapshot):
 
     xs_interp = interpolate_xs(model.eedf_grid, xs_energy, xs)
 
-    assert np.round(xs_interp, 6).tolist() == snapshot
+    snapshot.check(xs_interp, rtol=1e-05, atol=1e-08)
 
 
 def test_interpolation_errors():
@@ -141,7 +141,8 @@ def test_eedf(snapshot):
 
     pdf = eedf.pdf(energies)
 
-    assert np.round(pdf, 6).tolist() == snapshot
+    snapshot.check(pdf, rtol=1e-05, atol=1e-08)
+
     assert np.isclose(eedf.g, g)
     assert np.isclose(eedf.Te, T)
     assert np.isclose(eedf.mean_E, 3.0 * T / 2.0)
@@ -236,7 +237,7 @@ def test_arrhenius(snapshot):
 
     arr = arrhenius(T_grid, a, b, c)
 
-    assert np.round(arr, 6).tolist() == snapshot
+    snapshot.check(arr, rtol=1e-05, atol=1e-08)
 
 
 def test_arrhenius_log(snapshot):
@@ -250,4 +251,4 @@ def test_arrhenius_log(snapshot):
 
     arr_log = arrhenius_log(T_grid, log10_a, b, c)
 
-    assert np.round(arr_log, 6).tolist() == snapshot
+    snapshot.check(arr_log, rtol=1e-05, atol=1e-08)

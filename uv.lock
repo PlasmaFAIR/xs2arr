@@ -1782,6 +1782,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-regtest"
+version = "2.3.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7c/4c/b717ce374fba6fa3023cdc0f30d1b6efba375621e2e4df043da31f5f85ab/pytest_regtest-2.3.4.tar.gz", hash = "sha256:d9cf0db9d958b4e3fedcf84ff5ac4247b24663eb1bf9011568123fccd34b391f", size = 23131, upload-time = "2025-07-21T06:39:26.508Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2b/1f/4e5e8919f41f59c01970f9d67a27479e10c948dbfe784fe7179d5c0eb23f/pytest_regtest-2.3.4-py3-none-any.whl", hash = "sha256:aace0708157fbdf03398d28a6f9356b4625ae43d25a623666b6a5a11a9192cba", size = 17729, upload-time = "2025-07-21T06:39:25.244Z" },
+]
+
+[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 source = { registry = "https://pypi.org/simple" }
@@ -2388,18 +2400,6 @@ wheels = [
 ]
 
 [[package]]
-name = "syrupy"
-version = "4.9.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/f8/022d8704a3314f3e96dbd6bbd16ebe119ce30e35f41aabfa92345652fceb/syrupy-4.9.1.tar.gz", hash = "sha256:b7d0fcadad80a7d2f6c4c71917918e8ebe2483e8c703dfc8d49cdbb01081f9a4", size = 52492, upload-time = "2025-03-24T01:36:37.225Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ec/9d/aef9ec5fd5a4ee2f6a96032c4eda5888c5c7cec65cef6b28c4fc37671d88/syrupy-4.9.1-py3-none-any.whl", hash = "sha256:b94cc12ed0e5e75b448255430af642516842a2374a46936dd2650cfb6dd20eda", size = 52214, upload-time = "2025-03-24T01:36:35.278Z" },
-]
-
-[[package]]
 name = "tabulate"
 version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2623,7 +2623,7 @@ tests = [
     { name = "nbmake" },
     { name = "pytest" },
     { name = "pytest-cov" },
-    { name = "syrupy" },
+    { name = "pytest-regtest" },
 ]
 
 [package.metadata]
@@ -2641,12 +2641,12 @@ requires-dist = [
     { name = "pygments", marker = "extra == 'jupyter'", specifier = ">=2.19.2" },
     { name = "pytest", marker = "extra == 'tests'", specifier = ">=8.4.1" },
     { name = "pytest-cov", marker = "extra == 'tests'", specifier = ">=6.2.1" },
+    { name = "pytest-regtest", marker = "extra == 'tests'", specifier = ">=2.3.4" },
     { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.12.0" },
     { name = "scipy", specifier = ">=1.16.0" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8.2.3" },
     { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = ">=3.2.0" },
     { name = "sphinx-book-theme", marker = "extra == 'docs'", specifier = ">=1.1.4" },
-    { name = "syrupy", marker = "extra == 'tests'", specifier = ">=4.9.1" },
 ]
 provides-extras = ["docs", "tests", "lint", "jupyter"]
 
