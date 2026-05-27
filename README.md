@@ -24,7 +24,7 @@ $$$
 $$$
 to determine the constants, $a$, $b$ and $c$.
 
-**See the provided notebook for a detailed guide through the code.**
+**See the provided Jupyter notebook in `notebooks/xs2arr_guide.ipynb` for a detailed guide through the code.**
 
 
 ## Usage
