@@ -40,4 +40,4 @@ jobs:
 
     - name: Test notebook
       run: |
-        pytest -v --nbmake notebooks/new_notebook.ipynb
+        pytest -v --nbmake notebooks/xs2arr_guide.ipynb
