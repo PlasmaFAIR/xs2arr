@@ -74,9 +74,13 @@ def test_model_fit(snapshot):
 
     model.fit()
 
-    assert all(isinstance(result, ModelResult) for result in model.fitting_results)
+    for result, a, b, c in model.fitting_results:
+        assert isinstance(result, ModelResult)
+        assert isinstance(a, float)
+        assert isinstance(b, float)
+        assert isinstance(c, float)
 
-    abc = np.array(model.get_abc(), dtype=float)
+    abc = np.array([(a, b, c) for _, a, b, c in model.fitting_results], dtype=float)
 
     assert np.round(abc, 6).tolist() == snapshot
 

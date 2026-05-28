@@ -80,7 +80,7 @@ class Model:
 
         regressor, params = _create_fitting_model(logarithmic)
 
-        results = []
+        self.fitting_results = []
 
         for cross_section_info in self.cross_section_set.cross_sections:
             xs_energy = np.asarray(cross_section_info.data["energy"], dtype=float)
@@ -110,26 +110,7 @@ class Model:
 
             fitting = regressor.fit(rates, params, T=T_grid)
 
-            results.append(fitting)
-
-        self.fitting_results = results
-
-    def get_abc(self) -> list[tuple[float, float, float]]:
-        """
-        Extracts the fitted Arrhenius parameters (a, b, c) for each cross section in the set.
-
-        Raises
-        ------
-        ValueError
-            If no fitting results are available (fit() hasn't been called yet).
-        """
-
-        if self.fitting_results is None:
-            raise ValueError("No fitting results to extract")
-
-        return [
-            _get_true_abc(fitting_results) for fitting_results in self.fitting_results
-        ]
+            self.fitting_results.append((fitting, *_get_true_abc(fitting)))
 
     def write_results(self, output_file: str, *, append_to_file: bool = False) -> None:
         """
@@ -162,10 +143,8 @@ class Model:
             output_file, reaction_type="default"
         )  # Only have "default" reactions for now.
 
-        abc = self.get_abc()
-
-        for cross_section_info, (a, b, c) in zip(
-            self.cross_section_set.cross_sections, abc
+        for cross_section_info, (_, a, b, c) in zip(
+            self.cross_section_set.cross_sections, self.fitting_results
         ):
             reaction = cross_section_info.info.get("PROCESS", None)
 
