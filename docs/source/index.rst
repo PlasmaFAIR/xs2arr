@@ -6,9 +6,8 @@
 xs2arr documentation
 ====================
 
-Calculates Arrhenius coefficients for sets of electron and ion scattering cross sections through fitting of calculated
-rates versus temperature.
-
+.. include:: ../../README.md
+   :parser: myst_parser.sphinx_
 
 .. toctree::
    :maxdepth: 2
