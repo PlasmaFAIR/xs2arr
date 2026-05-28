@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from pathlib import Path
 
 import numpy as np
 from lmfit import Model as FittingModel
@@ -9,7 +10,14 @@ from scipy import constants
 
 from xs2arr.cross_section import interpolate_xs
 from xs2arr.eedf import Druyvesteyn, Maxwellian
-from xs2arr.io import parse_lxcat_data
+from xs2arr.io import (
+    _clear_file,
+    _write_header,
+    _write_reaction,
+    _write_reaction_footer,
+    _write_reaction_header,
+    parse_lxcat_data,
+)
 from xs2arr.rate import compute_rate_simpson, compute_rate_trapezoid
 from xs2arr.utils import arrhenius, arrhenius_log
 
@@ -123,14 +131,17 @@ class Model:
             _get_true_abc(fitting_results) for fitting_results in self.fitting_results
         ]
 
-    def write_results(self, output_file: str) -> None:
+    def write_results(self, output_file: str, *, append_to_file: bool = False) -> None:
         """
         Write results determined by the Arrhenius fitting method to a file.
 
         Parameters
         ----------
         output_file : str
-            Output file to write formatted results to."""
+            Output file to write formatted results to.
+        append_to_file: bool
+            Whether to append the results to an existing file. If False, the file will be overwritten.
+        """
 
         if self.fitting_results is None:
             raise ValueError("No fitting results to write")
@@ -139,6 +150,60 @@ class Model:
             raise TypeError("Output file must be of type str")
         if not output_file.strip():
             raise ValueError("Output file cannot be an empty string")
+
+        output_file = Path(output_file)
+
+        if not append_to_file:
+            _clear_file(output_file)
+
+        _write_header(output_file)
+
+        _write_reaction_header(
+            output_file, reaction_type="default"
+        )  # Only have "default" reactions for now.
+
+        abc = self.get_abc()
+
+        for cross_section_info, (a, b, c) in zip(
+            self.cross_section_set.cross_sections, abc
+        ):
+            reaction = cross_section_info.info.get("PROCESS", None)
+
+            if reaction is None:
+                print(f"Skipping {cross_section_info} as no process type specified.")
+                continue
+
+            # Remove the reaction type if it exists.
+            reaction = reaction.replace(", Attachment", "")
+            reaction = reaction.replace(", Elastic", "")
+            reaction = reaction.replace(", Excitation", "")
+            reaction = reaction.replace(", Ionization", "")
+
+            energy_str = cross_section_info.info.get("PARAM.", None)
+
+            if energy_str is None:
+                print(f"Skipping {cross_section_info} as no energy specified.")
+                continue
+
+            try:
+                energy_str = energy_str[energy_str.index("=") + 1 :].strip()
+            except ValueError:
+                print(
+                    f"Skipping {cross_section_info} as energy value improperly specified."
+                )
+                continue
+
+            try:
+                energy = float(energy_str[: energy_str.index("eV")].strip())
+            except ValueError:
+                print(
+                    f"Skipping {cross_section_info} as energy value improperly specified."
+                )
+                continue
+
+            _write_reaction(output_file, reaction, energy, a, b, c)
+
+        _write_reaction_footer(output_file, reaction_type="default")
 
 
 def _validate_and_prepare_lxcat_file(lxcat_file: str) -> CrossSectionSet:
@@ -161,7 +226,7 @@ def _validate_and_prepare_lxcat_file(lxcat_file: str) -> CrossSectionSet:
 
     if not isinstance(lxcat_file, str):
         raise TypeError(f"lxcat_file must be of type str, found {type(lxcat_file)}")
-    if not lxcat_file:
+    if not lxcat_file.strip():
         raise ValueError("lxcat_file cannot be an empty string")
 
     return parse_lxcat_data(lxcat_file)
