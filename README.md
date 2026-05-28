@@ -6,7 +6,7 @@ function (EEDF) is computed,
 
 $$
 f_{T_{\text{eff}}}\left(\epsilon\right)=\beta_{1}\left(\alpha\,T_{\text{eff}}\right)^{-\alpha}\sqrt{\epsilon}
-\:\exp{\left[-\frac{\epsilon^{x}\beta_{2}}{\alpha\,T_{\text{eff}}}\right]},
+\exp{\left[-\frac{\epsilon^{x}\beta_{2}}{\alpha\,T_{\text{eff}}}\right]},
 $$
 
 where $\alpha$, $\beta_{1}$ and $\beta_{2}$ are determinable parameters. A Maxwellian is defined with $x=1$ and a
@@ -15,7 +15,7 @@ Druyvesteyn with $x=2$.
 The reaction rate coefficient, $k\left(T_{\text{eff}}\right)$, is then calculated via an integral,
 
 $$
-k\left({T_{\text{eff}}}\right)=\sqrt{\frac{2q}{m_{e}}}\int_{0}^{\infty}\sqrt{\epsilon}\:\sigma\left(\epsilon\right)
+k\left({T_{\text{eff}}}\right)=\sqrt{\frac{2q}{m_{e}}}\int_{0}^{\infty}\sqrt{\epsilon}\sigma\left(\epsilon\right)
 f_{T_{\text{eff}}}\left(\epsilon\right)\mathrm{d}\epsilon.
 $$
 
@@ -25,7 +25,7 @@ the EEDF grid.
 The $T_{\text{eff}}$ and $k\left({T_{\text{eff}}}\right)$ data are then fit to the modified Arrhenius equation,
 
 $$
-k\left({T_{\text{eff}}}\right)=a\,T_{\text{eff}}^{b}\:\exp\left(\frac{c}{T_{\text{eff}}}\right).
+k\left({T_{\text{eff}}}\right)=a\,T_{\text{eff}}^{b}\exp\left(\frac{c}{T_{\text{eff}}}\right).
 $$
 
 to determine the constants, $a$, $b$ and $c$.
