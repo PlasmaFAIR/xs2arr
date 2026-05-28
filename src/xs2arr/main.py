@@ -16,13 +16,24 @@ def run() -> int:
     parser.add_argument(
         "output_file", type=str, default="output.txt", nargs="?", help="Output file"
     )
-    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    parser.add_argument(
+        "-a",
+        "--append",
+        action="store_true",
+        default=False,
+        help="Append to output file",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", default=False, help="Verbose output"
+    )
 
     args = parser.parse_args()
 
-    model = Model(args.input_file)
+    model = Model(lxcat_file=args.input_file)
 
-    results = model.fit()  # noqa: F841
+    model.fit()
+
+    model.write_results(output_file=args.output_file, append_to_file=args.append)
 
     return 0
 
