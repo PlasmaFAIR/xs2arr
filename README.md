@@ -33,9 +33,35 @@ to determine the constants, $a$, $b$ and $c$.
 **See the provided Jupyter notebook in `notebooks/xs2arr_guide.ipynb` for a detailed guide through the code.**
 
 
+## Installation
+
+After cloning the repository, use [uv](https://docs.astral.sh/uv/),
+```bash
+uv pip install .
+```
+or [pip](https://pypi.org/project/pip/),
+```bash
+pip install .
+```
+to install the package.
+
+
 ## Usage
 
-In a Python file, a `Model` can be created and fitted,
+### Command line
+After installation, `xs2arr` can be ran as,
+```bash
+xs2arr
+```
+with default LXCat input file `input.txt` and default output file `output.txt`.
+
+To specify input and output files, write them as the first and second arguments, respectively,
+```bash
+xs2arr some_lxcat.txt an_output_file.txt
+```
+
+### Python file
+A `Model` can be created and fitted,
 ```python
 from xs2arr import Model
 
