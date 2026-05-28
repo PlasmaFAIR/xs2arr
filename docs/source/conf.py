@@ -28,7 +28,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.todo",
     "sphinx_autodoc_typehints",
-    "myst_nb",
+    "myst_parser",
 ]
 
 autosummary_generate = True
@@ -75,7 +75,7 @@ html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 
 html_theme_options = {
-    "repository_url": "https://github.com/cydcowley/DLS-model",
+    "repository_url": "https://github.com/PlasmaFAIR/xs2arr",
     "repository_branch": "main",
     "path_to_docs": "docs",
     "use_edit_page_button": True,
