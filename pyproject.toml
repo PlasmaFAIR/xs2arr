@@ -73,6 +73,7 @@ extend-select = [
   "PD",  # pandas-vet
 ]
 ignore = [
+  "PLR0913", # too many arguments in function definition
   "PLR2004", # magic-comparison
   "B9",      # flake8-bugbear opinionated warnings
 ]
